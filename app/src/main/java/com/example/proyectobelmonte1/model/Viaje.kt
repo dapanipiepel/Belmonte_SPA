@@ -18,6 +18,7 @@ data class Viaje(
     val longitudDestino: Double,
     val numeroVuelo: String? = null,
     val estado: EstadoViaje = EstadoViaje.PENDIENTE,
-    val conductor: String? = null
+    val conductor: String? = null,
+    val cantidadPasajeros: Int = 1,
+    val vehiculoId: Long? = null
 )
-
