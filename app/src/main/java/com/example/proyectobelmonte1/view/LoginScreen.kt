@@ -35,6 +35,7 @@ package com.example.proyectobelmonte1.view
     import androidx.navigation.NavController
     import com.example.proyectobelmonte1.navigation.Routes
     import com.example.proyectobelmonte1.model.RolUsuario
+    import androidx.compose.runtime.LaunchedEffect
 
 
 
@@ -46,6 +47,41 @@ fun LoginScreen(
 
     val correo = loginViewModel.correo
     val contrasena = loginViewModel.contrasena
+
+    LaunchedEffect(Unit) {
+        loginViewModel.recuperarSesion { usuario ->
+            when (usuario?.rol) {
+                RolUsuario.ADMINISTRADOR -> {
+                    navController.navigate(Routes.ADMINISTRADOR) {
+                        popUpTo(Routes.LOGIN) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+
+                RolUsuario.SOLICITANTE -> {
+                    navController.navigate(Routes.SOLICITANTE) {
+                        popUpTo(Routes.LOGIN) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+
+                RolUsuario.CONDUCTOR -> {
+                    navController.navigate(Routes.CONDUCTOR) {
+                        popUpTo(Routes.LOGIN) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+
+                null -> Unit
+            }
+        }
+    }
 
         Column(
             modifier = Modifier
@@ -202,30 +238,42 @@ fun LoginScreen(
                         )
 
                         if (accesoPermitido) {
-                            when (loginViewModel.usuarioAutenticado?.rol) {
-                                RolUsuario.ADMINISTRADOR -> {
-                                    navController.navigate(Routes.ADMINISTRADOR)
-                                }
+                            loginViewModel.guardarSesion {
+                                when (loginViewModel.usuarioAutenticado?.rol) {
+                                    RolUsuario.ADMINISTRADOR -> {
+                                        navController.navigate(Routes.ADMINISTRADOR) {
+                                            popUpTo(Routes.LOGIN) {
+                                                inclusive = true
+                                            }
+                                            launchSingleTop = true
+                                        }
+                                    }
 
-                                RolUsuario.SOLICITANTE -> {
-                                    navController.navigate(Routes.SOLICITANTE)
-                                }
+                                    RolUsuario.SOLICITANTE -> {
+                                        navController.navigate(Routes.SOLICITANTE) {
+                                            popUpTo(Routes.LOGIN) {
+                                                inclusive = true
+                                            }
+                                            launchSingleTop = true
+                                        }
+                                    }
 
-                                RolUsuario.CONDUCTOR -> {
-                                    navController.navigate(Routes.CONDUCTOR)
-                                }
+                                    RolUsuario.CONDUCTOR -> {
+                                        navController.navigate(Routes.CONDUCTOR) {
+                                            popUpTo(Routes.LOGIN) {
+                                                inclusive = true
+                                            }
+                                            launchSingleTop = true
+                                        }
+                                    }
 
-                                null -> Unit
+                                    null -> Unit
+                                }
                             }
                         }
                     },
 
-
-
-
-                            modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary

@@ -38,11 +38,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Locale
 import kotlin.coroutines.resume
+import androidx.navigation.NavController
+import com.example.proyectobelmonte1.navigation.Routes
+import com.example.proyectobelmonte1.viewmodel.LoginViewModel
 
 @Composable
-fun SolicitanteScreen() {
+fun SolicitanteScreen(navController: NavController) {
 
     val viajeViewModel: ViajeViewModel = viewModel()
+    val loginViewModel: LoginViewModel = viewModel()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -77,6 +81,24 @@ fun SolicitanteScreen() {
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
+
+
+        Button(
+            onClick = {
+                loginViewModel.cerrarSesion {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.SOLICITANTE) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cerrar sesión")
+        }
+
 
         Text(
             text = "Completa los datos para registrar tu viaje.",

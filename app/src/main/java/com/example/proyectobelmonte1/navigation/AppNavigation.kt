@@ -23,15 +23,15 @@ fun AppNavigation() {
         }
 
         composable(route = Routes.ADMINISTRADOR) {
-            AdministradorScreen()
+            AdministradorScreen(navController = navController)
         }
 
         composable(route = Routes.SOLICITANTE) {
-            SolicitanteScreen()
+            SolicitanteScreen(navController = navController)
         }
 
         composable(route = Routes.CONDUCTOR) {
-            ConductorScreen()
+            ConductorScreen(navController = navController)
         }
     }
 }

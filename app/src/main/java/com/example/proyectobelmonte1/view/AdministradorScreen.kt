@@ -25,11 +25,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectobelmonte1.model.EstadoViaje
 import com.example.proyectobelmonte1.model.Viaje
 import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
+import androidx.navigation.NavController
+import com.example.proyectobelmonte1.navigation.Routes
+import com.example.proyectobelmonte1.viewmodel.LoginViewModel
 
 @Composable
-fun AdministradorScreen() {
+fun AdministradorScreen(navController: NavController) {
 
     val viajeViewModel: ViajeViewModel = viewModel()
+    val loginViewModel: LoginViewModel = viewModel()
 
     val solicitudesPendientes = viajeViewModel.viajes.filter {
         it.estado == EstadoViaje.PENDIENTE
@@ -61,6 +65,24 @@ fun AdministradorScreen() {
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
+
+
+        Button(
+            onClick = {
+                loginViewModel.cerrarSesion {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.ADMINISTRADOR) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cerrar sesión")
+        }
+
 
         Text(
             text = "Gestiona las solicitudes y asigna conductores.",

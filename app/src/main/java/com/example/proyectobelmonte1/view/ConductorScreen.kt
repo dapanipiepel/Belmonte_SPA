@@ -28,11 +28,15 @@ import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
+import com.example.proyectobelmonte1.navigation.Routes
+import com.example.proyectobelmonte1.viewmodel.LoginViewModel
 
 @Composable
-fun ConductorScreen() {
+fun ConductorScreen(navController: NavController){
 
     val viajeViewModel: ViajeViewModel = viewModel()
+    val loginViewModel: LoginViewModel = viewModel()
 
     val viajesAsignados = viajeViewModel.viajes.filter {
         it.estado == EstadoViaje.ASIGNADO
@@ -68,6 +72,21 @@ fun ConductorScreen() {
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
+
+        Button(
+            onClick = {
+                loginViewModel.cerrarSesion {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.CONDUCTOR) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            }
+        ) {
+            Text("Cerrar sesión")
+        }
 
         Text(
             text = "Consulta y gestiona los viajes asignados.",
@@ -187,42 +206,73 @@ private fun TarjetaViajeConductor(
                 color = MaterialTheme.colorScheme.primary
             )
 
+            if (textoBoton != null) {
+                Button(
+                    onClick = onClick,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(textoBoton)
+                }
+            }
+
+
             if (!viaje.numeroVuelo.isNullOrBlank()) {
                 Text(text = "Vuelo: ${viaje.numeroVuelo}")
             }
 
+
             if (viaje.estado != EstadoViaje.FINALIZADO) {
+
+                val coordenadasDestino = if (viaje.estado == EstadoViaje.ASIGNADO) {
+                    "${viaje.latitudOrigen},${viaje.longitudOrigen}"
+                } else {
+                    "${viaje.latitudDestino},${viaje.longitudDestino}"
+                }
+
+                val textoBoton = if (viaje.estado == EstadoViaje.ASIGNADO) {
+                    "Navegar al punto de recogida"
+                } else {
+                    "Navegar al destino"
+                }
+
                 Button(
                     onClick = {
-                        val ruta = Uri.parse("https://www.google.com/maps/dir/").buildUpon()
-                            .appendQueryParameter("api", "1")
-                            .appendQueryParameter(
-                                "origin",
-                                "${viaje.latitudOrigen},${viaje.longitudOrigen}"
-                            )
-                            .appendQueryParameter(
-                                "destination",
-                                "${viaje.latitudDestino},${viaje.longitudDestino}"
-                            )
-                            .appendQueryParameter("travelmode", "driving")
+
+                        val rutaWaze = Uri.parse("https://waze.com/ul").buildUpon()
+                            .appendQueryParameter("ll", coordenadasDestino)
+                            .appendQueryParameter("navigate", "yes")
                             .build()
 
-                        val intentMaps = Intent(
+                        val intentWaze = Intent(
                             Intent.ACTION_VIEW,
-                            ruta
-                        )
+                            rutaWaze
+                        ).apply {
+                            setPackage("com.waze")
+                        }
 
                         try {
-                            context.startActivity(intentMaps)
+                            context.startActivity(intentWaze)
                         } catch (e: android.content.ActivityNotFoundException) {
-                            // Android intentará abrir la ruta con una aplicación compatible.
+                            val rutaMaps = Uri.parse(
+                                "https://www.google.com/maps/dir/"
+                            ).buildUpon()
+                                .appendQueryParameter("api", "1")
+                                .appendQueryParameter("destination", coordenadasDestino)
+                                .appendQueryParameter("travelmode", "driving")
+                                .build()
+
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, rutaMaps)
+                            )
                         }
+
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Abrir ruta en Maps")
+                    Text(textoBoton)
                 }
             }
+
 
 
         }
