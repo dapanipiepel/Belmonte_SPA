@@ -4,6 +4,7 @@ package com.example.proyectobelmonte1.view
 import android.content.Context
 import android.location.Address
 import android.location.Geocoder
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -30,22 +31,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectobelmonte1.model.Viaje
 import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Locale
 import kotlin.coroutines.resume
+import androidx.navigation.NavController
+import com.example.proyectobelmonte1.navigation.Routes
+import com.example.proyectobelmonte1.viewmodel.LoginViewModel
 
 @Composable
 fun SolicitanteScreen(viajeViewModel: ViajeViewModel) {
+fun SolicitanteScreen(navController: NavController) {
 
+    val viajeViewModel: ViajeViewModel = viewModel()
+    val loginViewModel: LoginViewModel = viewModel()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -74,6 +83,14 @@ fun SolicitanteScreen(viajeViewModel: ViajeViewModel) {
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
 
         Text(
             text = "BELMONTE",
@@ -88,6 +105,24 @@ fun SolicitanteScreen(viajeViewModel: ViajeViewModel) {
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
+
+
+        Button(
+            onClick = {
+                loginViewModel.cerrarSesion {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.SOLICITANTE) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cerrar sesión")
+        }
+
 
         Text(
             text = "Completa los datos para registrar tu viaje.",
@@ -207,9 +242,11 @@ fun SolicitanteScreen(viajeViewModel: ViajeViewModel) {
                             destino.isBlank() ||
                             pasajeros == null ||
                             pasajeros < 1
+                            destino.isBlank()
                         ) {
                             mensajeLocal =
                                 "Completa los campos obligatorios y define una cantidad válida de pasajeros."
+                                "Completa todos los campos obligatorios."
                         } else {
                             scope.launch {
                                 guardando = true
@@ -336,6 +373,9 @@ fun SolicitanteScreen(viajeViewModel: ViajeViewModel) {
         }
     }
 }
+        }
+    }
+}
 
 private suspend fun buscarCoordenadas(
     context: Context,
@@ -349,6 +389,7 @@ private suspend fun buscarCoordenadas(
     return suspendCancellableCoroutine { continuation ->
         try {
             val geocoder = Geocoder(context, Locale.forLanguageTag("es-CL"))
+            val geocoder = Geocoder(context, Locale("es", "CL"))
 
             geocoder.getFromLocationName(
                 direccion,

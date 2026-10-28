@@ -30,10 +30,12 @@ fun AppNavigation() {
 
         composable(route = Routes.ADMINISTRADOR) {
             AdministradorScreen(viajeViewModel)
+            AdministradorScreen(navController = navController)
         }
 
         composable(route = Routes.SOLICITANTE) {
             SolicitanteScreen(viajeViewModel)
+            SolicitanteScreen(navController = navController)
         }
 
         composable(route = Routes.CONDUCTOR) {
@@ -59,6 +61,7 @@ fun AppNavigation() {
                 viajeViewModel = viajeViewModel,
                 onVolver = { navController.popBackStack() }
             )
+            ConductorScreen(navController = navController)
         }
     }
 }

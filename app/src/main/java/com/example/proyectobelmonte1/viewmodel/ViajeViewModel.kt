@@ -80,6 +80,7 @@ class ViajeViewModel(application: Application) : AndroidViewModel(application) {
         conductor: String,
         vehiculo: Vehiculo
     ) {
+    fun asignarConductor(viaje: Viaje, conductor: String) {
         viewModelScope.launch {
             if (!vehiculo.activo || vehiculo.capacidadPasajeros < viaje.cantidadPasajeros) {
                 _notificaciones.emit(

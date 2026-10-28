@@ -7,11 +7,14 @@ import androidx.room.migration.Migration
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.proyectobelmonte1.model.Sesion
 import com.example.proyectobelmonte1.model.Viaje
 
 @Database(
     entities = [Viaje::class],
+    entities = [Viaje::class, Sesion::class],
     version = 2,
     exportSchema = false
 )
@@ -19,6 +22,8 @@ import com.example.proyectobelmonte1.model.Viaje
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun viajeDao(): ViajeDao
+
+    abstract fun sesionDao(): SesionDao
 
     companion object {
 
@@ -32,6 +37,17 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 db.execSQL(
                     "ALTER TABLE viajes ADD COLUMN vehiculoId INTEGER"
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `sesion` (
+                        `id` INTEGER NOT NULL,
+                        `correo` TEXT NOT NULL,
+                        `rol` TEXT NOT NULL,
+                        `token` TEXT,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent()
                 )
             }
         }

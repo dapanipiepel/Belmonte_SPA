@@ -1,3 +1,4 @@
+
 package com.example.proyectobelmonte1.view
 
 import androidx.compose.foundation.background
@@ -32,19 +33,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectobelmonte1.model.EstadoViaje
 import com.example.proyectobelmonte1.model.Vehiculo
 import com.example.proyectobelmonte1.model.Viaje
 import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
+import androidx.navigation.NavController
+import com.example.proyectobelmonte1.navigation.Routes
+import com.example.proyectobelmonte1.viewmodel.LoginViewModel
 
 @Composable
 fun AdministradorScreen(viajeViewModel: ViajeViewModel) {
     val snackbarHostState = remember { SnackbarHostState() }
     val viajesOrdenados = viajeViewModel.ordenarCronologicamente(viajeViewModel.viajes)
     val solicitudesPendientes = viajesOrdenados.filter {
+fun AdministradorScreen(navController: NavController) {
+
+    val viajeViewModel: ViajeViewModel = viewModel()
+    val loginViewModel: LoginViewModel = viewModel()
+
+    val solicitudesPendientes = viajeViewModel.viajes.filter {
         it.estado == EstadoViaje.PENDIENTE
     }
     val viajesAsignados = viajesOrdenados.filter {
+
+    val viajesAsignados = viajeViewModel.viajes.filter {
         it.estado == EstadoViaje.ASIGNADO
     }
 
@@ -68,27 +81,64 @@ fun AdministradorScreen(viajeViewModel: ViajeViewModel) {
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold
             )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
 
-            Text(
-                text = "Panel del administrador",
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
+        Text(
+            text = "BELMONTE",
+            color = MaterialTheme.colorScheme.primary,
+            fontSize = 30.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = "Panel del administrador",
+            color = MaterialTheme.colorScheme.onBackground,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
+        )
 
             Text(
                 text = "Gestiona las solicitudes y asigna conductores y vehículos.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = {
+                loginViewModel.cerrarSesion {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.ADMINISTRADOR) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cerrar sesión")
+        }
 
-            Text(
-                text = "Solicitudes pendientes (${solicitudesPendientes.size})",
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
+
+        Text(
+            text = "Gestiona las solicitudes y asigna conductores.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Solicitudes pendientes (${solicitudesPendientes.size})",
+            color = MaterialTheme.colorScheme.onBackground,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
 
             if (solicitudesPendientes.isEmpty()) {
                 Text(
@@ -107,38 +157,61 @@ fun AdministradorScreen(viajeViewModel: ViajeViewModel) {
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
+        if (solicitudesPendientes.isEmpty()) {
             Text(
-                text = "Viajes asignados (${viajesAsignados.size})",
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                text = "No hay solicitudes pendientes por asignar.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        } else {
+            solicitudesPendientes.forEach { viaje ->
 
-            if (viajesAsignados.isEmpty()) {
-                Text(
-                    text = "Todavía no se han asignado viajes.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                TarjetaSolicitud(
+                    viaje = viaje,
+                    onAsignar = { conductor ->
+                        viajeViewModel.asignarConductor(viaje, conductor)
+                    }
                 )
-            } else {
-                viajesAsignados.forEach { viaje ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
+            }
+        }
+
+        if (viajeViewModel.mensaje.isNotBlank()) {
+            Text(
+                text = viajeViewModel.mensaje,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Viajes asignados (${viajesAsignados.size})",
+            color = MaterialTheme.colorScheme.onBackground,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        if (viajesAsignados.isEmpty()) {
+            Text(
+                text = "Todavía no se han asignado viajes.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            viajesAsignados.forEach { viaje ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "${viaje.origen} → ${viaje.destino}",
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                        Text(
+                            text = "${viaje.origen} → ${viaje.destino}",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
 
                             Text(text = "Pasajero: ${viaje.pasajero}")
                             Text(text = "Fecha: ${viaje.fecha}")
@@ -158,6 +231,17 @@ fun AdministradorScreen(viajeViewModel: ViajeViewModel) {
         }
     }
 }
+                        Text(text = "Pasajero: ${viaje.pasajero}")
+                        Text(text = "Fecha: ${viaje.fecha}")
+                        Text(text = "Hora: ${viaje.hora}")
+                        Text(text = "Conductor: ${viaje.conductor ?: "Sin asignar"}")
+                        Text(text = "Estado: ${viaje.estado}")
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun TarjetaSolicitud(
@@ -165,6 +249,7 @@ private fun TarjetaSolicitud(
     conductores: List<String>,
     vehiculos: List<Vehiculo>,
     onAsignar: (String, Vehiculo) -> Unit
+    onAsignar: (String) -> Unit
 ) {
     var conductorSeleccionado by rememberSaveable(viaje.id) {
         mutableStateOf("")
@@ -213,6 +298,7 @@ private fun TarjetaSolicitud(
 
             Text(
                 text = "Asignar conductor y vehículo",
+                text = "Asignar conductor",
                 fontWeight = FontWeight.SemiBold
             )
 
@@ -226,6 +312,12 @@ private fun TarjetaSolicitud(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
+            Button(
+                onClick = { onAsignar("Carlos Soto") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Asignar a Carlos Soto")
+            }
 
                 DropdownMenu(
                     expanded = menuConductoresAbierto,
@@ -298,6 +390,11 @@ private fun TarjetaSolicitud(
                     !capacidadInsuficiente
             ) {
                 Text("Confirmar asignación")
+            Button(
+                onClick = { onAsignar("Ana Torres") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Asignar a Ana Torres")
             }
         }
     }

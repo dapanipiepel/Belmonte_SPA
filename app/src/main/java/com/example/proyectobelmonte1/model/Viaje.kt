@@ -21,4 +21,6 @@ data class Viaje(
     val conductor: String? = null,
     val cantidadPasajeros: Int = 1,
     val vehiculoId: Long? = null
+    val conductor: String? = null
 )
+
