@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -126,10 +125,16 @@ fun DetalleViajeScreen(
                     }
                 }
 
-                // --- BOTONES DE NAVEGACIÓN GPS ---
+                //BOTONES DE NAVEGACIÓN GPS
                 if (viaje.estado != EstadoViaje.FINALIZADO) {
+                    // Si el viaje aún no inicia, se navega al origen (punto de recogida); una vez en curso, al destino
+                    val esPuntoRecogida = viaje.estado == EstadoViaje.PENDIENTE || viaje.estado == EstadoViaje.ASIGNADO
+                    val targetLat = if (esPuntoRecogida) viaje.latitudOrigen else viaje.latitudDestino
+                    val targetLng = if (esPuntoRecogida) viaje.longitudOrigen else viaje.longitudDestino
+                    val targetNombre = if (esPuntoRecogida) "Punto de recogida (${viaje.origen})" else "Destino (${viaje.destino})"
+
                     Text(
-                        text = "Navegación GPS Externa",
+                        text = "Navegar hacia: $targetNombre",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -142,8 +147,8 @@ fun DetalleViajeScreen(
                             onClick = {
                                 abrirGoogleMapsNativo(
                                     context = context,
-                                    latitud = viaje.latitudDestino,
-                                    longitud = viaje.longitudDestino,
+                                    latitud = targetLat,
+                                    longitud = targetLng,
                                     snackbarHostState = snackbarHostState,
                                     scope = scope
                                 )
@@ -161,8 +166,8 @@ fun DetalleViajeScreen(
                             onClick = {
                                 abrirWazeNativo(
                                     context = context,
-                                    latitud = viaje.latitudDestino,
-                                    longitud = viaje.longitudDestino,
+                                    latitud = targetLat,
+                                    longitud = targetLng,
                                     snackbarHostState = snackbarHostState,
                                     scope = scope
                                 )
@@ -178,7 +183,7 @@ fun DetalleViajeScreen(
                     }
                 }
 
-                // --- BOTONES DE CAMBIO DE ESTADO DEL SERVICIO ---
+                //BOTONES DE CAMBIO DE ESTADO DEL SERVICIO
                 when (viaje.estado) {
                     EstadoViaje.ASIGNADO -> Button(
                         onClick = {
@@ -188,7 +193,7 @@ fun DetalleViajeScreen(
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32), // Verde
+                            containerColor = Color(0xFF2E7D32),
                             contentColor = Color.White
                         ),
                         modifier = Modifier
@@ -206,7 +211,7 @@ fun DetalleViajeScreen(
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFC62828), // Rojo
+                            containerColor = Color(0xFFC62828),
                             contentColor = Color.White
                         ),
                         modifier = Modifier
@@ -232,8 +237,6 @@ fun DetalleViajeScreen(
     }
 }
 
-// --- FUNCIONES HELPER DE NAVEGACIÓN GPS ---
-
 private fun abrirGoogleMapsNativo(
     context: Context,
     latitud: Double,
@@ -241,7 +244,6 @@ private fun abrirGoogleMapsNativo(
     snackbarHostState: SnackbarHostState,
     scope: CoroutineScope
 ) {
-    // Forzar el punto decimal con Locale.US
     val coordsFormatted = String.format(Locale.US, "%.6f,%.6f", latitud, longitud)
     val gmmIntentUri = Uri.parse("google.navigation:q=$coordsFormatted")
     val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri).apply {
@@ -254,7 +256,6 @@ private fun abrirGoogleMapsNativo(
             snackbarHostState.showSnackbar("Iniciando navegación en Google Maps...")
         }
     } catch (e: Exception) {
-        // Fallback genérico si no tiene la app instalada
         val genericUri = Uri.parse("geo:$coordsFormatted?q=$coordsFormatted")
         try {
             context.startActivity(Intent(Intent.ACTION_VIEW, genericUri))
@@ -266,7 +267,6 @@ private fun abrirGoogleMapsNativo(
     }
 }
 
-
 private fun abrirWazeNativo(
     context: Context,
     latitud: Double,
@@ -275,25 +275,20 @@ private fun abrirWazeNativo(
     scope: CoroutineScope
 ) {
     val coordsFormatted = String.format(Locale.US, "%.6f,%.6f", latitud, longitud)
-
-    // Intent exclusivo para la app nativa de Waze
     val wazeUri = Uri.parse("https://waze.com/ul?ll=$coordsFormatted&navigate=yes")
     val wazeIntent = Intent(Intent.ACTION_VIEW, wazeUri).apply {
         setPackage("com.waze")
     }
 
     try {
-        // Intentar abrir la app nativa de Waze
         context.startActivity(wazeIntent)
         scope.launch {
             snackbarHostState.showSnackbar("Iniciando navegación en Waze...")
         }
     } catch (e: ActivityNotFoundException) {
-        // Si waze no está instalado, redirigir a Google Maps y avisar al usuario
         scope.launch {
             snackbarHostState.showSnackbar("Waze no está instalado. Redirigiendo a Google Maps...")
         }
         abrirGoogleMapsNativo(context, latitud, longitud, snackbarHostState, scope)
-
     }
 }

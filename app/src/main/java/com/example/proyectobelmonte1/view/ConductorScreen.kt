@@ -9,12 +9,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -31,6 +37,7 @@ import androidx.navigation.NavController
 import com.example.proyectobelmonte1.model.EstadoViaje
 import com.example.proyectobelmonte1.model.Viaje
 import com.example.proyectobelmonte1.navigation.Routes
+import com.example.proyectobelmonte1.viewmodel.AuthViewModel
 import com.example.proyectobelmonte1.viewmodel.LoginViewModel
 import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
 
@@ -39,7 +46,8 @@ fun ConductorScreen(
     viajeViewModel: ViajeViewModel = viewModel(),
     navController: NavController,
     onAbrirDetalle: (Long) -> Unit,
-    loginViewModel: LoginViewModel = viewModel()
+    loginViewModel: LoginViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val viajesOrdenados = viajeViewModel.ordenarCronologicamente(viajeViewModel.viajes)
@@ -81,6 +89,25 @@ fun ConductorScreen(
             )
 
             Button(
+                onClick = { navController.navigate(Routes.CONDUCTOR_QR) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.QrCode,
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Mostrar Mi Código QR",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            OutlinedButton(
                 onClick = {
                     loginViewModel.cerrarSesion {
                         navController.navigate(Routes.LOGIN) {
@@ -91,7 +118,8 @@ fun ConductorScreen(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Cerrar sesión")
             }
@@ -201,13 +229,14 @@ private fun TarjetaViajeConductor(
             Spacer(modifier = Modifier.height(4.dp))
 
             if (viaje.estado != EstadoViaje.FINALIZADO) {
-                val coordenadasDestino = if (viaje.estado == EstadoViaje.ASIGNADO) {
+                val esPuntoRecogida = viaje.estado == EstadoViaje.PENDIENTE || viaje.estado == EstadoViaje.ASIGNADO
+                val coordenadasDestino = if (esPuntoRecogida) {
                     "${viaje.latitudOrigen},${viaje.longitudOrigen}"
                 } else {
                     "${viaje.latitudDestino},${viaje.longitudDestino}"
                 }
 
-                val textoBotonNavegacion = if (viaje.estado == EstadoViaje.ASIGNADO) {
+                val textoBotonNavegacion = if (esPuntoRecogida) {
                     "Navegar al punto de recogida"
                 } else {
                     "Navegar al destino"
@@ -220,28 +249,21 @@ private fun TarjetaViajeConductor(
                             .appendQueryParameter("navigate", "yes")
                             .build()
 
-                        val intentWaze = Intent(
-                            Intent.ACTION_VIEW,
-                            rutaWaze
-                        ).apply {
+                        val intentWaze = Intent(Intent.ACTION_VIEW, rutaWaze).apply {
                             setPackage("com.waze")
                         }
 
                         try {
                             context.startActivity(intentWaze)
                         } catch (_: Exception) {
-                            val rutaMaps = Uri.parse(
-                                "https://www.google.com/maps/dir/"
-                            ).buildUpon()
+                            val rutaMaps = Uri.parse("https://www.google.com/maps/dir/").buildUpon()
                                 .appendQueryParameter("api", "1")
                                 .appendQueryParameter("destination", coordenadasDestino)
                                 .appendQueryParameter("travelmode", "driving")
                                 .build()
 
                             try {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, rutaMaps)
-                                )
+                                context.startActivity(Intent(Intent.ACTION_VIEW, rutaMaps))
                             } catch (_: Exception) {
                                 // Maps and Waze unavailable
                             }

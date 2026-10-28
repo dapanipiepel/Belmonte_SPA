@@ -37,6 +37,7 @@ import com.example.proyectobelmonte1.model.EstadoViaje
 import com.example.proyectobelmonte1.model.Vehiculo
 import com.example.proyectobelmonte1.model.Viaje
 import com.example.proyectobelmonte1.navigation.Routes
+import com.example.proyectobelmonte1.viewmodel.AuthViewModel
 import com.example.proyectobelmonte1.viewmodel.LoginViewModel
 import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
 
@@ -44,16 +45,15 @@ import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
 fun AdministradorScreen(
     viajeViewModel: ViajeViewModel = viewModel(),
     navController: NavController,
-    loginViewModel: LoginViewModel = viewModel()
+    loginViewModel: LoginViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val viajesOrdenados = viajeViewModel.ordenarCronologicamente(viajeViewModel.viajes)
-    val solicitudesPendientes = viajesOrdenados.filter {
-        it.estado == EstadoViaje.PENDIENTE
-    }
-    val viajesAsignados = viajesOrdenados.filter {
-        it.estado == EstadoViaje.ASIGNADO
-    }
+    val solicitudesPendientes = viajesOrdenados.filter { it.estado == EstadoViaje.PENDIENTE }
+    val viajesAsignados = viajesOrdenados.filter { it.estado == EstadoViaje.ASIGNADO }
+    val viajesEnCurso = viajesOrdenados.filter { it.estado == EstadoViaje.EN_CURSO }
+    val viajesFinalizados = viajesOrdenados.filter { it.estado == EstadoViaje.FINALIZADO }
 
     ObservarNotificaciones(viajeViewModel, snackbarHostState)
 
@@ -154,36 +154,87 @@ fun AdministradorScreen(
                 )
             } else {
                 viajesAsignados.forEach { viaje ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "${viaje.origen} → ${viaje.destino}",
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(text = "Pasajero: ${viaje.pasajero}")
-                            Text(text = "Fecha: ${viaje.fecha}")
-                            Text(text = "Hora: ${viaje.hora}")
-                            Text(text = "Conductor: ${viaje.conductor ?: "Sin asignar"}")
-                            Text(
-                                text = "Vehículo: ${
-                                    viajeViewModel.obtenerVehiculo(viaje.vehiculoId)?.descripcion
-                                        ?: "Sin asignar"
-                                }"
-                            )
-                            Text(text = "Estado: ${viaje.estado}")
-                        }
-                    }
+                    TarjetaViajeAdmin(viaje = viaje, viajeViewModel = viajeViewModel)
                 }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Viajes en curso (${viajesEnCurso.size})",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            if (viajesEnCurso.isEmpty()) {
+                Text(
+                    text = "No hay viajes en curso actualmente.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                viajesEnCurso.forEach { viaje ->
+                    TarjetaViajeAdmin(viaje = viaje, viajeViewModel = viajeViewModel)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Historial y viajes finalizados (${viajesFinalizados.size})",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            if (viajesFinalizados.isEmpty()) {
+                Text(
+                    text = "No hay registros de viajes finalizados.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                viajesFinalizados.forEach { viaje ->
+                    TarjetaViajeAdmin(viaje = viaje, viajeViewModel = viajeViewModel)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaViajeAdmin(
+    viaje: Viaje,
+    viajeViewModel: ViajeViewModel
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = "${viaje.origen} → ${viaje.destino}",
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(text = "Pasajero: ${viaje.pasajero}")
+            Text(text = "Fecha: ${viaje.fecha} · Hora: ${viaje.hora}")
+            Text(text = "Conductor: ${viaje.conductor ?: "Sin asignar"}")
+            Text(
+                text = "Vehículo: ${
+                    viajeViewModel.obtenerVehiculo(viaje.vehiculoId)?.descripcion
+                        ?: "Sin asignar"
+                }"
+            )
+            Text(
+                text = "Estado: ${viaje.estado}",
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -195,12 +246,8 @@ private fun TarjetaSolicitud(
     vehiculos: List<Vehiculo>,
     onAsignar: (String, Vehiculo) -> Unit
 ) {
-    var conductorSeleccionado by rememberSaveable(viaje.id) {
-        mutableStateOf("")
-    }
-    var vehiculoSeleccionadoId by rememberSaveable(viaje.id) {
-        mutableStateOf<Long?>(null)
-    }
+    var conductorSeleccionado by rememberSaveable(viaje.id) { mutableStateOf("") }
+    var vehiculoSeleccionadoId by rememberSaveable(viaje.id) { mutableStateOf<Long?>(null) }
     var menuConductoresAbierto by remember { mutableStateOf(false) }
     var menuVehiculosAbierto by remember { mutableStateOf(false) }
     val vehiculoSeleccionado = vehiculos.find { it.id == vehiculoSeleccionadoId }

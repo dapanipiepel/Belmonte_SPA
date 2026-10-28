@@ -22,7 +22,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,43 +34,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.proyectobelmonte1.model.RolUsuario
 import com.example.proyectobelmonte1.navigation.Routes
+import com.example.proyectobelmonte1.viewmodel.AuthViewModel
 import com.example.proyectobelmonte1.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(
     navController: NavController,
-    loginViewModel: LoginViewModel = viewModel()
+    loginViewModel: LoginViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val correo = loginViewModel.correo
     val contrasena = loginViewModel.contrasena
-
-    LaunchedEffect(Unit) {
-        loginViewModel.recuperarSesion { usuario ->
-            if (navController.currentDestination?.route == Routes.LOGIN) {
-                when (usuario?.rol) {
-                    RolUsuario.ADMINISTRADOR -> {
-                        navController.navigate(Routes.ADMINISTRADOR) {
-                            popUpTo(Routes.LOGIN) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    }
-                    RolUsuario.SOLICITANTE -> {
-                        navController.navigate(Routes.SOLICITANTE) {
-                            popUpTo(Routes.LOGIN) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    }
-                    RolUsuario.CONDUCTOR -> {
-                        navController.navigate(Routes.CONDUCTOR) {
-                            popUpTo(Routes.LOGIN) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    }
-                    null -> Unit
-                }
-            }
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -225,7 +198,12 @@ fun LoginScreen(
 
                     if (accesoPermitido) {
                         loginViewModel.guardarSesion {
-                            when (loginViewModel.usuarioAutenticado?.rol) {
+                            val usuario = loginViewModel.usuarioAutenticado
+                            usuario?.let {
+                                authViewModel.iniciarSesion(it.correo, it.rol.name)
+                            }
+
+                            when (usuario?.rol) {
                                 RolUsuario.ADMINISTRADOR -> {
                                     navController.navigate(Routes.ADMINISTRADOR) {
                                         popUpTo(Routes.LOGIN) { inclusive = true }

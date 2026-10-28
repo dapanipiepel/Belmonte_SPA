@@ -6,18 +6,25 @@ import android.location.Geocoder
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -40,12 +47,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.proyectobelmonte1.model.Viaje
 import com.example.proyectobelmonte1.navigation.Routes
+import com.example.proyectobelmonte1.viewmodel.AuthViewModel
 import com.example.proyectobelmonte1.viewmodel.LoginViewModel
 import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.coroutines.resume
 
@@ -53,7 +63,8 @@ import kotlin.coroutines.resume
 fun SolicitanteScreen(
     viajeViewModel: ViajeViewModel = viewModel(),
     navController: NavController,
-    loginViewModel: LoginViewModel = viewModel()
+    loginViewModel: LoginViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -98,17 +109,38 @@ fun SolicitanteScreen(
             )
 
             Button(
+                onClick = { navController.navigate(Routes.QR_SCANNER) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.QrCodeScanner,
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Escanear QR del Conductor",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            OutlinedButton(
                 onClick = {
                     loginViewModel.cerrarSesion {
+                        authViewModel.cerrarSesion()
                         navController.navigate(Routes.LOGIN) {
-                            popUpTo(Routes.SOLICITANTE) {
+                            popUpTo(Routes.LOGIN) {
                                 inclusive = true
                             }
                             launchSingleTop = true
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Cerrar sesión")
             }
@@ -179,9 +211,7 @@ fun SolicitanteScreen(
                         value = origen,
                         onValueChange = { origen = it },
                         label = { Text("Dirección de origen") },
-                        placeholder = {
-                            Text("Ej.: Plaza de Armas, Santiago, Chile")
-                        },
+                        placeholder = { Text("Ej.: Plaza de Armas, Santiago, Chile") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -197,9 +227,7 @@ fun SolicitanteScreen(
                         value = destino,
                         onValueChange = { destino = it },
                         label = { Text("Dirección de destino") },
-                        placeholder = {
-                            Text("Incluye comuna y ciudad")
-                        },
+                        placeholder = { Text("Incluye comuna y ciudad") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -233,6 +261,9 @@ fun SolicitanteScreen(
                             ) {
                                 mensajeLocal =
                                     "Completa los campos obligatorios y define una cantidad válida de pasajeros."
+                            } else if (!esFechaHoraFutura(fecha.trim(), hora.trim())) {
+                                mensajeLocal =
+                                    "La fecha y hora del viaje debe ser presente o futura."
                             } else {
                                 scope.launch {
                                     guardando = true
@@ -255,18 +286,12 @@ fun SolicitanteScreen(
                                                 fecha = fecha.trim(),
                                                 hora = hora.trim(),
                                                 origen = origen.trim(),
-                                                latitudOrigen =
-                                                    coordenadasOrigen.first,
-                                                longitudOrigen =
-                                                    coordenadasOrigen.second,
+                                                latitudOrigen = coordenadasOrigen.first,
+                                                longitudOrigen = coordenadasOrigen.second,
                                                 destino = destino.trim(),
-                                                latitudDestino =
-                                                    coordenadasDestino.first,
-                                                longitudDestino =
-                                                    coordenadasDestino.second,
-                                                numeroVuelo = numeroVuelo
-                                                    .trim()
-                                                    .ifBlank { null }
+                                                latitudDestino = coordenadasDestino.first,
+                                                longitudDestino = coordenadasDestino.second,
+                                                numeroVuelo = numeroVuelo.trim().ifBlank { null }
                                             )
                                         )
                                     } catch (_: Exception) {
@@ -291,8 +316,7 @@ fun SolicitanteScreen(
                         )
                     }
 
-                    val mensajeMostrar =
-                        mensajeLocal.ifBlank { viajeViewModel.mensaje }
+                    val mensajeMostrar = mensajeLocal.ifBlank { viajeViewModel.mensaje }
 
                     if (mensajeMostrar.isNotBlank()) {
                         Text(
@@ -343,6 +367,25 @@ fun SolicitanteScreen(
             }
         }
     }
+}
+
+private fun esFechaHoraFutura(fechaStr: String, horaStr: String): Boolean {
+    val formatters = listOf(
+        DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"),
+        DateTimeFormatter.ofPattern("d/M/yyyy HH:mm"),
+        DateTimeFormatter.ofPattern("dd/MM/yyyy H:m"),
+        DateTimeFormatter.ofPattern("d/M/yyyy H:m"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+    )
+    val fechaHoraCombined = "$fechaStr $horaStr"
+    for (formatter in formatters) {
+        try {
+            val parsedDateTime = LocalDateTime.parse(fechaHoraCombined, formatter)
+            return !parsedDateTime.isBefore(LocalDateTime.now().minusMinutes(2))
+        } catch (_: Exception) {
+        }
+    }
+    return false
 }
 
 private suspend fun buscarCoordenadas(
