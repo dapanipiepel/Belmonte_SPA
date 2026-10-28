@@ -19,6 +19,56 @@ data class ConductorUiState(
     val valoracion: String = "4.9 ★"
 )
 
+object ConductorRepository {
+    private val perfiles = mapOf(
+        "ana" to ConductorUiState(
+            nombre = "Ana Torres",
+            rut = "17.456.789-1",
+            patente = "EFGH-34",
+            vehiculo = "Hyundai Staria 2023",
+            telefono = "+56 9 8765 4321"
+        ),
+        "carlos.soto" to ConductorUiState(
+            nombre = "Carlos Soto",
+            rut = "15.890.123-4",
+            patente = "ABCD-12",
+            vehiculo = "Toyota Corolla",
+            telefono = "+56 9 1234 5678"
+        ),
+        "carlos.torres" to ConductorUiState(
+            nombre = "Carlos Torres",
+            rut = "14.321.654-K",
+            patente = "IJKL-56",
+            vehiculo = "Mercedes-Benz Sprinter",
+            telefono = "+56 9 9876 5432"
+        )
+    )
+
+    fun obtenerPerfil(identificador: String): ConductorUiState {
+        val key = identificador.lowercase()
+        return when {
+            key.contains("ana") -> perfiles["ana"]!!
+            key.contains("soto") -> perfiles["carlos.soto"]!!
+            key.contains("torres") -> perfiles["carlos.torres"]!!
+            key.contains("conductor") -> perfiles["carlos.soto"]!!
+            else -> {
+                val nombreLimpio = if (identificador.contains("@")) {
+                    identificador.substringBefore("@").replace(".", " ").uppercase()
+                } else {
+                    identificador.ifBlank { "Conductor Belmonte" }
+                }
+                ConductorUiState(
+                    nombre = nombreLimpio,
+                    rut = "12.345.678-K",
+                    patente = "BM-2026",
+                    vehiculo = "Vehículo Corporativo",
+                    telefono = "+56 9 5555 4444"
+                )
+            }
+        }
+    }
+}
+
 class QrViewModel : ViewModel() {
 
     private val _scannedConductor = MutableStateFlow<ConductorUiState?>(null)
@@ -55,7 +105,6 @@ class QrViewModel : ViewModel() {
 
     private fun procesarCodigoQR(data: String) {
         try {
-            // Intenta parsear si el QR viene en formato JSON
             if (data.trim().startsWith("{")) {
                 val json = JSONObject(data)
                 _scannedConductor.value = ConductorUiState(
@@ -66,7 +115,6 @@ class QrViewModel : ViewModel() {
                     telefono = json.optString("telefono", "+56 9 1234 5678")
                 )
             } else {
-                // Si viene separado por comas
                 val partes = data.split(",")
                 if (partes.size >= 4) {
                     _scannedConductor.value = ConductorUiState(
@@ -77,14 +125,8 @@ class QrViewModel : ViewModel() {
                         telefono = partes.getOrElse(4) { "+56 9 8765 4321" }.trim()
                     )
                 } else {
-                    // Si el QR contiene un ID simple o código corto de conductor
-                    _scannedConductor.value = ConductorUiState(
-                        nombre = "Carlos Mendoza ($data)",
-                        rut = "15.890.123-4",
-                        patente = "EFGH-34",
-                        vehiculo = "Hyundai Staria 2023",
-                        telefono = "+56 9 9876 5432"
-                    )
+                    // Mapeo dinámico según el contenido escaneado en el emulador
+                    _scannedConductor.value = ConductorRepository.obtenerPerfil(data.trim())
                 }
             }
         } catch (e: Exception) {

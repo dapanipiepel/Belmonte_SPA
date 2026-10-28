@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.proyectobelmonte1.viewmodel.AuthViewModel
+import com.example.proyectobelmonte1.viewmodel.ConductorRepository
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import org.json.JSONObject
@@ -28,23 +29,21 @@ import org.json.JSONObject
 @Composable
 fun ConductorQRScreen(
     onVolver: () -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    rut: String = "15.890.123-4",
-    patente: String = "EFGH-34",
-    vehiculo: String = "Hyundai Staria 2023",
-    telefono: String = "+56 9 9876 5432"
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val userEmail by authViewModel.userEmail.collectAsState()
-    val nombreConductor = if (userEmail.isNotBlank()) userEmail.substringBefore("@").replace(".", " ").uppercase() else "CONDUCTOR BELMONTE"
+    val conductor = remember(userEmail) {
+        ConductorRepository.obtenerPerfil(userEmail)
+    }
 
-    val qrJsonContent = remember(userEmail) {
+    val qrJsonContent = remember(conductor, userEmail) {
         JSONObject().apply {
-            put("nombre", nombreConductor)
-            put("rut", rut)
-            put("patente", patente)
-            put("vehiculo", vehiculo)
-            put("telefono", telefono)
-            put("correo", userEmail)
+            put("nombre", conductor.nombre)
+            put("rut", conductor.rut)
+            put("patente", conductor.patente)
+            put("vehiculo", conductor.vehiculo)
+            put("telefono", conductor.telefono)
+            if (userEmail.isNotBlank()) put("correo", userEmail)
         }.toString()
     }
 
@@ -100,11 +99,10 @@ fun ConductorQRScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = nombreConductor, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    if (userEmail.isNotBlank()) {
-                        Text(text = userEmail, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Text(text = "Patente: $patente", fontSize = 14.sp, color = Color.Gray)
+                    Text(text = conductor.nombre, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(text = "RUT: ${conductor.rut}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = "${conductor.vehiculo} · Patente: ${conductor.patente}", fontSize = 14.sp, color = Color.Gray)
+                    Text(text = "Teléfono: ${conductor.telefono}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
