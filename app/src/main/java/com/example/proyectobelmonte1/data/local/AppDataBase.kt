@@ -1,9 +1,7 @@
-
 package com.example.proyectobelmonte1.data.local
 
 import android.content.Context
 import androidx.room.Database
-import androidx.room.migration.Migration
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -13,7 +11,6 @@ import com.example.proyectobelmonte1.model.Sesion
 import com.example.proyectobelmonte1.model.Viaje
 
 @Database(
-    entities = [Viaje::class],
     entities = [Viaje::class, Sesion::class],
     version = 2,
     exportSchema = false
@@ -32,13 +29,16 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
+
                 db.execSQL(
                     "ALTER TABLE viajes ADD COLUMN cantidadPasajeros INTEGER NOT NULL DEFAULT 1"
                 )
                 db.execSQL(
                     "ALTER TABLE viajes ADD COLUMN vehiculoId INTEGER"
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
+                )
+
+
+                db.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS `sesion` (
                         `id` INTEGER NOT NULL,
@@ -60,6 +60,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "belmonte_database"
                 )
                     .addMigrations(MIGRATION_1_2)
+                    .fallbackToDestructiveMigration(true)
                     .build()
 
                 INSTANCE = instancia

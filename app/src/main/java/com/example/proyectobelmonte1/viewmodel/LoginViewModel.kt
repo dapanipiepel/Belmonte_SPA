@@ -1,11 +1,9 @@
-
 package com.example.proyectobelmonte1.viewmodel
 
 import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectobelmonte1.data.local.AppDatabase
@@ -14,7 +12,6 @@ import com.example.proyectobelmonte1.model.Sesion
 import com.example.proyectobelmonte1.model.Usuario
 import kotlinx.coroutines.launch
 
-class LoginViewModel : ViewModel() {
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     private val sesionDao = AppDatabase
@@ -61,9 +58,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         val usuarioEncontrado = usuariosPrueba.find { usuario ->
-            usuario.correo == correo &&
-            usuario.correo == correo.trim() &&
-                    usuario.contrasena == contrasena
+            usuario.correo == correo.trim() && usuario.contrasena == contrasena
         }
 
         usuarioAutenticado = usuarioEncontrado
@@ -91,7 +86,11 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     fun recuperarSesion(onRecuperada: (Usuario?) -> Unit) {
         viewModelScope.launch {
-            val sesionGuardada = sesionDao.obtenerSesion()
+            val sesionGuardada = try {
+                sesionDao.obtenerSesion()
+            } catch (e: Exception) {
+                null
+            }
 
             val usuario = try {
                 sesionGuardada?.let { sesion ->
@@ -101,7 +100,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                         rol = RolUsuario.valueOf(sesion.rol)
                     )
                 }
-            } catch (e: IllegalArgumentException) {
+            } catch (e: Exception) {
                 null
             }
 

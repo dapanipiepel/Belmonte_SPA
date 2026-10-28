@@ -4,7 +4,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 @Composable
 fun ObservarNotificaciones(
@@ -13,7 +13,9 @@ fun ObservarNotificaciones(
 ) {
     LaunchedEffect(viajeViewModel, snackbarHostState) {
         viajeViewModel.notificaciones.collect { mensaje ->
-            snackbarHostState.showSnackbar(mensaje)
+            this@LaunchedEffect.launch {
+                snackbarHostState.showSnackbar(mensaje)
+            }
         }
     }
 }

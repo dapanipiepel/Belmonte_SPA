@@ -1,4 +1,3 @@
-
 package com.example.proyectobelmonte1.viewmodel
 
 import android.app.Application
@@ -14,10 +13,9 @@ import com.example.proyectobelmonte1.model.Vehiculo
 import com.example.proyectobelmonte1.model.Viaje
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 
 class ViajeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -74,13 +72,11 @@ class ViajeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-
     fun asignarConductor(
         viaje: Viaje,
         conductor: String,
         vehiculo: Vehiculo
     ) {
-    fun asignarConductor(viaje: Viaje, conductor: String) {
         viewModelScope.launch {
             if (!vehiculo.activo || vehiculo.capacidadPasajeros < viaje.cantidadPasajeros) {
                 _notificaciones.emit(
@@ -109,17 +105,24 @@ class ViajeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun ordenarCronologicamente(viajes: List<Viaje>): List<Viaje> {
-        val formatoFechaHora = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+        val formatters = listOf(
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"),
+            DateTimeFormatter.ofPattern("d/M/yyyy HH:mm"),
+            DateTimeFormatter.ofPattern("dd/MM/yyyy H:m"),
+            DateTimeFormatter.ofPattern("d/M/yyyy H:m"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+        )
         return viajes.sortedBy { viaje ->
-            try {
-                LocalDateTime.parse(
-                    "${viaje.fecha} ${viaje.hora}",
-                    formatoFechaHora
-                )
-            } catch (e: DateTimeParseException) {
-                LocalDateTime.MAX
+            var fechaHoraParsed: LocalDateTime? = null
+            val fechaHoraStr = "${viaje.fecha.trim()} ${viaje.hora.trim()}"
+            for (formatter in formatters) {
+                try {
+                    fechaHoraParsed = LocalDateTime.parse(fechaHoraStr, formatter)
+                    break
+                } catch (_: Exception) {
+                }
             }
+            fechaHoraParsed ?: LocalDateTime.MAX
         }
     }
-
 }

@@ -1,7 +1,5 @@
-
 package com.example.proyectobelmonte1.view
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,30 +32,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.proyectobelmonte1.model.EstadoViaje
 import com.example.proyectobelmonte1.model.Vehiculo
 import com.example.proyectobelmonte1.model.Viaje
-import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
-import androidx.navigation.NavController
 import com.example.proyectobelmonte1.navigation.Routes
 import com.example.proyectobelmonte1.viewmodel.LoginViewModel
+import com.example.proyectobelmonte1.viewmodel.ViajeViewModel
 
 @Composable
-fun AdministradorScreen(viajeViewModel: ViajeViewModel) {
+fun AdministradorScreen(
+    viajeViewModel: ViajeViewModel = viewModel(),
+    navController: NavController,
+    loginViewModel: LoginViewModel = viewModel()
+) {
     val snackbarHostState = remember { SnackbarHostState() }
     val viajesOrdenados = viajeViewModel.ordenarCronologicamente(viajeViewModel.viajes)
     val solicitudesPendientes = viajesOrdenados.filter {
-fun AdministradorScreen(navController: NavController) {
-
-    val viajeViewModel: ViajeViewModel = viewModel()
-    val loginViewModel: LoginViewModel = viewModel()
-
-    val solicitudesPendientes = viajeViewModel.viajes.filter {
         it.estado == EstadoViaje.PENDIENTE
     }
     val viajesAsignados = viajesOrdenados.filter {
-
-    val viajesAsignados = viajeViewModel.viajes.filter {
         it.estado == EstadoViaje.ASIGNADO
     }
 
@@ -81,64 +75,43 @@ fun AdministradorScreen(navController: NavController) {
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold
             )
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
 
-        Text(
-            text = "BELMONTE",
-            color = MaterialTheme.colorScheme.primary,
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Text(
-            text = "Panel del administrador",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
+            Text(
+                text = "Panel del administrador",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
 
             Text(
                 text = "Gestiona las solicitudes y asigna conductores y vehículos.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-        Button(
-            onClick = {
-                loginViewModel.cerrarSesion {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.ADMINISTRADOR) {
-                            inclusive = true
+            Button(
+                onClick = {
+                    loginViewModel.cerrarSesion {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.ADMINISTRADOR) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
                         }
-                        launchSingleTop = true
                     }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Cerrar sesión")
-        }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Cerrar sesión")
+            }
 
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            text = "Gestiona las solicitudes y asigna conductores.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Solicitudes pendientes (${solicitudesPendientes.size})",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
+            Text(
+                text = "Solicitudes pendientes (${solicitudesPendientes.size})",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
 
             if (solicitudesPendientes.isEmpty()) {
                 Text(
@@ -157,62 +130,45 @@ fun AdministradorScreen(navController: NavController) {
                     )
                 }
             }
-        if (solicitudesPendientes.isEmpty()) {
-            Text(
-                text = "No hay solicitudes pendientes por asignar.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            solicitudesPendientes.forEach { viaje ->
 
-                TarjetaSolicitud(
-                    viaje = viaje,
-                    onAsignar = { conductor ->
-                        viajeViewModel.asignarConductor(viaje, conductor)
-                    }
+            if (viajeViewModel.mensaje.isNotBlank()) {
+                Text(
+                    text = viajeViewModel.mensaje,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
-        }
 
-        if (viajeViewModel.mensaje.isNotBlank()) {
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                text = viajeViewModel.mensaje,
-                color = MaterialTheme.colorScheme.primary
+                text = "Viajes asignados (${viajesAsignados.size})",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
             )
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Viajes asignados (${viajesAsignados.size})",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        if (viajesAsignados.isEmpty()) {
-            Text(
-                text = "Todavía no se han asignado viajes.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            viajesAsignados.forEach { viaje ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = "${viaje.origen} → ${viaje.destino}",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+            if (viajesAsignados.isEmpty()) {
+                Text(
+                    text = "Todavía no se han asignado viajes.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                viajesAsignados.forEach { viaje ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
                         )
-
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "${viaje.origen} → ${viaje.destino}",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                             Text(text = "Pasajero: ${viaje.pasajero}")
                             Text(text = "Fecha: ${viaje.fecha}")
                             Text(text = "Hora: ${viaje.hora}")
@@ -231,17 +187,6 @@ fun AdministradorScreen(navController: NavController) {
         }
     }
 }
-                        Text(text = "Pasajero: ${viaje.pasajero}")
-                        Text(text = "Fecha: ${viaje.fecha}")
-                        Text(text = "Hora: ${viaje.hora}")
-                        Text(text = "Conductor: ${viaje.conductor ?: "Sin asignar"}")
-                        Text(text = "Estado: ${viaje.estado}")
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun TarjetaSolicitud(
@@ -249,7 +194,6 @@ private fun TarjetaSolicitud(
     conductores: List<String>,
     vehiculos: List<Vehiculo>,
     onAsignar: (String, Vehiculo) -> Unit
-    onAsignar: (String) -> Unit
 ) {
     var conductorSeleccionado by rememberSaveable(viaje.id) {
         mutableStateOf("")
@@ -262,7 +206,7 @@ private fun TarjetaSolicitud(
     val vehiculoSeleccionado = vehiculos.find { it.id == vehiculoSeleccionadoId }
     val capacidadInsuficiente =
         vehiculoSeleccionado != null &&
-            vehiculoSeleccionado.capacidadPasajeros < viaje.cantidadPasajeros
+                vehiculoSeleccionado.capacidadPasajeros < viaje.cantidadPasajeros
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -298,7 +242,6 @@ private fun TarjetaSolicitud(
 
             Text(
                 text = "Asignar conductor y vehículo",
-                text = "Asignar conductor",
                 fontWeight = FontWeight.SemiBold
             )
 
@@ -308,16 +251,10 @@ private fun TarjetaSolicitud(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        conductorSeleccionado.ifBlank { "Seleccionar conductor" },
+                        text = conductorSeleccionado.ifBlank { "Seleccionar conductor" },
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-            Button(
-                onClick = { onAsignar("Carlos Soto") },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Asignar a Carlos Soto")
-            }
 
                 DropdownMenu(
                     expanded = menuConductoresAbierto,
@@ -341,7 +278,7 @@ private fun TarjetaSolicitud(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        vehiculoSeleccionado?.let {
+                        text = vehiculoSeleccionado?.let {
                             "${it.descripcion} · ${it.capacidadPasajeros} pasajeros"
                         } ?: "Seleccionar vehículo",
                         color = MaterialTheme.colorScheme.onSurface
@@ -357,7 +294,7 @@ private fun TarjetaSolicitud(
                             text = {
                                 Text(
                                     "${vehiculo.descripcion} · " +
-                                        "${vehiculo.capacidadPasajeros} pasajeros"
+                                            "${vehiculo.capacidadPasajeros} pasajeros"
                                 )
                             },
                             onClick = {
@@ -386,15 +323,10 @@ private fun TarjetaSolicitud(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = conductorSeleccionado.isNotBlank() &&
-                    vehiculoSeleccionado != null &&
-                    !capacidadInsuficiente
+                        vehiculoSeleccionado != null &&
+                        !capacidadInsuficiente
             ) {
                 Text("Confirmar asignación")
-            Button(
-                onClick = { onAsignar("Ana Torres") },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Asignar a Ana Torres")
             }
         }
     }

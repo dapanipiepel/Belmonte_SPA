@@ -1,4 +1,3 @@
-
 package com.example.proyectobelmonte1.navigation
 
 import androidx.compose.runtime.Composable
@@ -29,18 +28,23 @@ fun AppNavigation() {
         }
 
         composable(route = Routes.ADMINISTRADOR) {
-            AdministradorScreen(viajeViewModel)
-            AdministradorScreen(navController = navController)
+            AdministradorScreen(
+                viajeViewModel = viajeViewModel,
+                navController = navController
+            )
         }
 
         composable(route = Routes.SOLICITANTE) {
-            SolicitanteScreen(viajeViewModel)
-            SolicitanteScreen(navController = navController)
+            SolicitanteScreen(
+                viajeViewModel = viajeViewModel,
+                navController = navController
+            )
         }
 
         composable(route = Routes.CONDUCTOR) {
             ConductorScreen(
                 viajeViewModel = viajeViewModel,
+                navController = navController,
                 onAbrirDetalle = { viajeId ->
                     navController.navigate("${Routes.DETALLE_VIAJE}/$viajeId")
                 }
@@ -55,13 +59,12 @@ fun AppNavigation() {
                 }
             )
         ) { backStackEntry ->
-            val viajeId = requireNotNull(backStackEntry.arguments?.getLong("viajeId"))
+            val viajeId = backStackEntry.arguments?.getLong("viajeId") ?: -1L
             DetalleViajeScreen(
                 viajeId = viajeId,
                 viajeViewModel = viajeViewModel,
                 onVolver = { navController.popBackStack() }
             )
-            ConductorScreen(navController = navController)
         }
     }
 }
